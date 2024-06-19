@@ -21,12 +21,64 @@ namespace AdvancedWeightPatcher
 
         public static void RunPatch(IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
         {
-            foreach(var armor in state.LoadOrder.PriorityOrder.WinningOverrides<IArmorGetter>())
-            {
-                if (!armor.TemplateArmor.IsNull)
-                    continue;
+            var settings = Settings.Value;
+            var armorRules = settings.Rules.Where(rule => rule.Target == TargetType.Armor).ToList();
+            if (armorRules.Any()) {
+                PatchArmors(state, armorRules);
             }
-            //Your code here!
+        }
+
+        private static void PatchArmors(IPatcherState<ISkyrimMod, ISkyrimModGetter> state, List<Rule> armorRules)
+        {
+            foreach (var armor in state.LoadOrder.PriorityOrder.WinningOverrides<IArmorGetter>())
+            {
+                if (armor == null) continue;
+                if (!armor.TemplateArmor.IsNull) continue;
+
+                foreach(var rule in armorRules)
+                {
+                    if (rule.TargetValue == null)
+                        continue;
+
+                    if(MatchesRule(armor, rule.Conditions))
+                    {
+                        var armorCopy = armor.DeepCopy();
+                        SetTargetValues(armorCopy, rule.TargetValue);
+                        state.PatchMod.Armors.Set(armorCopy);
+                    }
+                }
+            }
+        }
+
+        private static bool MatchesRule(IArmorGetter armor, List<Condition>? conditions)
+        {
+            if (conditions == null || !conditions.Any())
+                return true;
+
+            foreach(var condition in conditions)
+            {
+                if (condition.Keywords != null && !condition.Keywords.All(keyword => armor.HasKeyword(keyword))) return false;
+                if (condition.ArmorType != ArmorType.NotSpecified)
+                {
+                    if (armor.BodyTemplate == null) return false;
+                    if ((uint)armor.BodyTemplate.ArmorType != (uint)condition.ArmorType) return false;
+                }
+
+                if(condition.FirstPersonFlags != BipedObjectFlag.NotSpecified)
+                {
+                    if (armor.BodyTemplate == null) return false;
+                    if ((uint)condition.FirstPersonFlags != (uint)armor.BodyTemplate.FirstPersonFlags) return false;
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private static void SetTargetValues(Armor armor, TargetValue targetValue)
+        {
+            if(targetValue.PatchWeight) armor.Weight = (float)targetValue.Weight;
+            if(targetValue.PatchValue) armor.Value = (uint)targetValue.Value;
+            if(targetValue.PatchArmorRating) armor.ArmorRating = (float)targetValue.ArmorRating;
         }
     }
 }

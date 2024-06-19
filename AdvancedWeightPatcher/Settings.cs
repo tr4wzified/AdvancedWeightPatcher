@@ -8,6 +8,6 @@ namespace AdvancedWeightPatcher
 {
     public class Settings
     {
-        List<Rule> Rules { get; set; } = new();
+        public List<Rule> Rules { get; set; } = new();
     }
 }
