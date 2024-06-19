@@ -42,6 +42,7 @@ namespace AdvancedWeightPatcher
     }
     public class Rule
     {
+        public string Name { get; set; } = string.Empty;
         public TargetType Target { get; set; }
         public List<Condition>? Conditions { get; set; }
         public TargetValue? TargetValue { get; set; }
