@@ -68,7 +68,6 @@ namespace AdvancedWeightPatcher
                 {
                     if (armor.BodyTemplate == null) return false;
                     if ((uint)condition.FirstPersonFlags != (uint)armor.BodyTemplate.FirstPersonFlags) return false;
-                    return false;
                 }
             }
             return true;
